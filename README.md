@@ -2,21 +2,25 @@
 
 **wallpaper-swapper** is a Python script that dynamically changes your Windows 11 desktop and lock screen wallpapers using wallpapers from Unsplash. You can either use an included local database (`wallpapers.json`) or fetch new wallpapers via the Unsplash API.
 
+## Download
+- You can download the wallpapers.py script and run it with python
+- You can also download standalone executable in the [releases](https://github.com/0Jumpero/wallpaper-swapper/releases/)
+
 ## Features
 - Gets database with 1500 wallpapers from Unsplash.
 - Sets a random desktop and lock screen wallpaper.
 - Automatically updates the local wallpapers database when necessary.
 
 ## Prerequisites for running script version
-1. Python 3.6 or higher installed on your system.
-2. Install the required Python packages:
-    ```bash
-    pip install pillow requests
-    ```
-3. Administrator rights are required to change lockscreen wallpaper.
+> 1. Python 3.6 or higher installed on your system.
+> 2. Install the required Python packages:
+```
+pip install pillow requests
+```
+> 3. Administrator rights are required to change lockscreen wallpaper.
 
 ## Prerequisites for running executable version
-None
+> None
 
 ## Setup for running script version
 
