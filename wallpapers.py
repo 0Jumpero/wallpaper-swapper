@@ -1,7 +1,9 @@
 # Script to change windows 11 wallpaper to a random image from a database (JSON file with an array of urls) 
 
 import ctypes
+import pyuac
 import os
+import sys
 from io import BytesIO
 import random
 from PIL import Image
@@ -14,28 +16,46 @@ import time
 import pystray
 from threading import Thread
 
+# Paths
+pictures_folder = "C:\\Users\\Public\\Pictures\\Wallpapers"
+main_wallpaper_path = os.path.join(pictures_folder, "main_wallpaper.jpg")
+lock_screen_wallpaper_path = os.path.join(pictures_folder, "lock_screen_wallpaper.jpg")
+json_file_path = os.path.join(pictures_folder, 'wallpapers.json')
+
+# Save settings
+def save_settings():
+  global key, interval, lock_toggle, query, pictures_folder
+  try:
+    if not os.path.exists(pictures_folder):
+      print(f"Creating wallpapers folder at {os.path.join(pictures_folder)}...")
+      os.makedirs(os.path.join(pictures_folder), exist_ok=True)
+    with open(os.path.join(pictures_folder, 'settings.json'), 'w', encoding='utf-8') as f:
+      json.dump({
+        'key': key, 
+        'interval': interval, 
+        'lock_toggle': lock_toggle,
+        'query': query
+      }, f, indent=2)
+    print("Settings saved.")
+  except Exception as e:
+    print(f"Error saving settings: {e}")
+
 # Load settings
 try:
   print("Loading settings...")
-  with open('settings.json', 'r', encoding='utf-8') as f:
+  with open(os.path.join(pictures_folder, 'settings.json'), 'r', encoding='utf-8') as f:
     settings = json.load(f)
     key = settings['key']
     interval = settings['interval']
     lock_toggle = settings['lock_toggle']
     query = settings['query']
-    pictures_folder = settings['pictures_folder']
 except FileNotFoundError:
   print("Failed to load settings. Using default values...")
   key = 'your-api-key'
   interval = 30
   lock_toggle = False
   query = 'nature'
-  pictures_folder = os.path.join('C:\\', 'Users', 'Public', 'Pictures', 'Wallpapers')
-
-# Paths
-main_wallpaper_path = os.path.join(pictures_folder, "main_wallpaper.jpg")
-lock_screen_wallpaper_path = os.path.join(pictures_folder, "lock_screen_wallpaper.jpg")
-json_file_path = os.path.join(pictures_folder, 'wallpapers.json')
+  save_settings()
 
 # Check JSON
 def check_wallpapers_JSON(json_file_path):
@@ -51,20 +71,21 @@ def check_wallpapers_JSON(json_file_path):
 
 # Get wallpapers from Unsplash
 def fetch_wallpapers_db(json_file_path):
-  global query
+  global query, pictures_folder
   wallpapers = []
   page = 0
 
   # Check if api key is set
   if key == 'your-api-key':
-    print("Error: API key not set. Set it in settings.json.")
+    print(f"Error: API key not set. Set it in {pictures_folder}\\settings.json.")
     root = tk.Tk()
-    root.title("API Error")
-    root.geometry("200x100")
+    root.title("API Key Error")
+    root.geometry("300x135")
     root.resizable(False, False)
     root.attributes('-toolwindow', True, '-topmost', True)
-    tk.Label(root, text = "Error: API key not set.\nSet it in settings.json").place(relx=0.5, rely=0.25, anchor="center")
-    tk.Button(root, text = "OK", width=10, command = root.destroy).place(relx=0.5, rely=0.7, anchor="center")
+    tk.Label(root, text = f"API key is not set. You can add wallpapers database \nfrom my Github or enter your own API key in the file:\n\n{pictures_folder}\\settings.json").place(relx=0.5, rely=0.3, anchor="center")
+    tk.Button(root, text = "Exit", width=10, command = root.destroy).place(relx=0.7, rely=0.75, anchor="center")
+    tk.Button(root, text = "Github", width=10, command = lambda: os.startfile('https://raw.githubusercontent.com/0Jumpero/wallpaper-swapper/refs/heads/main/wallpapers.json')).place(relx=0.3, rely=0.75, anchor="center")
     root.eval('tk::PlaceWindow . center')
     root.mainloop()
     return "API key not set."
@@ -242,22 +263,6 @@ def change_wallpaper():
 
   return status
 
-# Save settings
-def save_settings():
-  try:
-    with open('settings.json', 'w', encoding='utf-8') as f:
-      global key, pictures_folder, interval, lock_toggle, query
-      json.dump({
-        'key': key, 
-        'interval': interval, 
-        'lock_toggle': lock_toggle,
-        'query': query,
-        'pictures_folder': pictures_folder 
-      }, f, indent=2)
-    print("Settings saved.")
-  except Exception as e:
-    print(f"Error saving settings: {e}")
-
 # Set interval function
 def set_interval(new_interval):
   global interval, run, scheduler
@@ -272,21 +277,27 @@ def set_interval(new_interval):
   print(f"Schedule with {new_interval}min interval started.")
   save_settings()
 
+# Check admin privileges
+def checkAdmin():
+  print("Checking admin privileges...")
+  try:
+    return ctypes.windll.shell32.IsUserAnAdmin()
+  except:
+    return False
+
 # Elevate to admin 
-def elevate():
-  print("Relaunching as admin...")
-  ctypes.windll.shell32.ShellExecuteW(None, "runas", "pythonw", __file__, None, 1)
-  os._exit(0)
+def elevate(window):
+  print("Exiting current process...")
+  global tray, elevator
+  window.destroy()
+  elevator = True
+  if tray: tray.stop()
 
 # Toggle lockscreen function
 def toggle_lockscreen(setting):
   global lock_toggle
   if setting == True:
-    print("Checking admin privileges...")
-    try:
-      isAdmin = ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-      isAdmin = False
+    isAdmin = checkAdmin()
 
     if isAdmin:
       lock_toggle = True
@@ -300,7 +311,7 @@ def toggle_lockscreen(setting):
       root.title("Admin mode required")
       root.attributes('-toolwindow', True, '-topmost', True)
       tk.Label(root, text="To change the lockscreen wallpaper you need to \nrelaunch the program in admin mode. Continue?", padx=10, pady=10).place(relx=0.5, rely=0.3, anchor="center")
-      tk.Button(root, text="Yes", width=10, command=elevate).place(relx=0.3, rely=0.7, anchor="center")
+      tk.Button(root, text="Yes", width=10, command=lambda: elevate(root)).place(relx=0.3, rely=0.7, anchor="center")
       tk.Button(root, text="No", width=10, command=lambda: root.destroy()).place(relx=0.7, rely=0.7, anchor="center")
       root.eval('tk::PlaceWindow . center')
       root.mainloop()
@@ -320,12 +331,14 @@ def tray_setup():
     print(f"Error downloading icon: {e}")
     return
   
-  print("Converting menu items...")
+  print("Creating menu items...")
   img = Image.open(BytesIO(response.content))
+  global tray
   tray = pystray.Icon("wallpaper-changer", img, "Wallpaper Changer", menu=(
     pystray.MenuItem("Change wallpaper", lambda: change_wallpaper()),
     pystray.MenuItem("Toggle Lockscreen", lambda: toggle_lockscreen(not lock_toggle), checked=lambda item: lock_toggle),
     pystray.MenuItem("Set Interval", pystray.Menu(
+      pystray.MenuItem("5 minutes", lambda: set_interval(5), checked=lambda item: interval == 5),
       pystray.MenuItem("15 minutes", lambda: set_interval(15), checked=lambda item: interval == 15),
       pystray.MenuItem("30 minutes", lambda: set_interval(30), checked=lambda item: interval == 30),
       pystray.MenuItem("1 hour", lambda: set_interval(60), checked=lambda item: interval == 60),
@@ -356,15 +369,23 @@ def run_schedule():
 # Main thread globals
 run = True
 scheduler = None
+tray = None
+elevator = False
 
 # Main thread
 if __name__ == "__main__": 
-  # Check lockscreen toggle requirement
-  if lock_toggle: toggle_lockscreen(lock_toggle)
-
+  # Check lockscreen toggle admin requirement
+  if not lock_toggle: admin_skip = False 
+  elif lock_toggle and checkAdmin(): admin_skip = False
+  else: 
+    toggle_lockscreen(lock_toggle)
+    admin_skip = True
+  
   # Initial wallpaper change
-  status = change_wallpaper()
+  if admin_skip: status = admin_skip # Skip initial wallpaper change if admin privileges are required
+  else: status = change_wallpaper()
 
+  # Exit if wallpaper change failed
   if status == 0: 
     # Start the schedule in a separate thread
     scheduler = Thread(target=run_schedule, daemon=True)
@@ -377,3 +398,9 @@ if __name__ == "__main__":
     print("Quitting...")
     run = False
     scheduler.join()
+    
+  # Relaunch in admin mode if required
+  if elevator: 
+    print("Relaunching in admin mode...")
+    pyuac.runAsAdmin()
+    os._exit(0)
