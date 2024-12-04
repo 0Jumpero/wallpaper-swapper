@@ -6,9 +6,8 @@
 - Gets database with 1500 wallpapers from Unsplash.
 - Sets a random desktop and lock screen wallpaper.
 - Automatically updates the local wallpapers database when necessary.
-- Compatible with Windows 11.
 
-## Prerequisites
+## Prerequisites for running script version
 1. Python 3.6 or higher installed on your system.
 2. Install the required Python packages:
     ```bash
@@ -16,17 +15,21 @@
     ```
 3. Administrator rights are required to change lockscreen wallpaper.
 
-## Setup
+## Prerequisites for running executable version
+None
+
+## Setup for running script version
 
 ### Place API Key
 To fetch wallpapers from Unsplash, you'll need an API key:
 1. Create a free Unsplash developer account at [Unsplash Developer](https://unsplash.com/developers).
 2. Generate an API key.
-3. Replace the placeholder `key` in the script with your API key:
+3. Replace the placeholder `key` in the settings.json (generated upon running script once) with your API key:
    
-```python
-# Unsplash API key
-key = 'your-api-key'
+```json
+{
+    "key": "your-api-key",
+}
 ```
 
 ### Or use the Included Database
@@ -38,9 +41,10 @@ C:\Users\Public\Pictures\Wallpapers\
 ```
 
 ### (Optional) Change the wallpaper topic (default: nature)
-```python
-def fetch_wallpapers_db(json_file_path):
-  query = 'nature' # Change the query to selected wallpaper topic
+```json
+{
+  "query": "nature"
+}
 ```
 
 ## Folder Structure
@@ -52,12 +56,15 @@ C:\
     └── Public
         └── Pictures
             └── Wallpapers
-                ├── main_wallpaper.jpg
-                ├── lock_screen_wallpaper.jpg
+                ├── home.png
+                ├── lock.png
+                ├── settings.json
                 └── wallpapers.json
+
 ```
-- main_wallpaper.jpg: The current desktop wallpaper.
-- lock_screen_wallpaper.jpg: The current lock screen wallpaper.
+- home.png: The current desktop wallpaper.
+- lock.png: The current lock screen wallpaper.
+- settings.json: Settings for the wallpaper-swapper.
 - wallpapers.json: The local database of wallpapers (created/updated by the script).
 
 The script will automatically create these folders and files if they do not exist.
@@ -65,13 +72,14 @@ The script will automatically create these folders and files if they do not exis
 ## Usage
 
 ### Fetch New Wallpapers from Unsplash:
-  Ensure the key variable contains a valid API key.
+  Ensure API key is set and valid in the settings.json.
   Change wallpaper topic if needed.
-  Run the script as an administrator.
+  Delete old wallpapers.json if present.
+  Run the script.
 
 ### Use the Included Database:
   Place the wallpapers.json file in the correct folder.
-  Run the script as an administrator.
+  Run the script.
 
 ## Notes
 
@@ -81,7 +89,12 @@ The script will automatically create these folders and files if they do not exis
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for details.
+
 Contributing
 
 Contributions are welcome! Feel free to fork this repository, create a branch, and submit a pull request.
 Enjoy a refreshing look for your desktop and lock screen!
+
+Attributions
+
+This script uses an image from www.flaticon.com as an icon.
