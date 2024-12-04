@@ -288,9 +288,11 @@ def checkAdmin():
 # Elevate to admin 
 def elevate(window):
   print("Exiting current process...")
-  global tray, elevator
+  global tray, elevator, lock_toggle
   window.destroy()
   elevator = True
+  lock_toggle = True
+  save_settings()
   if tray: tray.stop()
 
 # Toggle lockscreen function
@@ -322,7 +324,7 @@ def toggle_lockscreen(setting):
 
 # Tray menu setup
 def tray_setup():
-  print("Setting up tray menu...\nDownloading icon...")
+  print("Setting up tray icon...\nDownloading icon...")
   img_url = "https://cdn-icons-png.flaticon.com/512/1046/1046493.png"
   try:
     response = requests.get(img_url, stream=True)
@@ -331,7 +333,7 @@ def tray_setup():
     print(f"Error downloading icon: {e}")
     return
   
-  print("Creating menu items...")
+  print("Creating tray menu items...")
   img = Image.open(BytesIO(response.content))
   global tray
   tray = pystray.Icon("wallpaper-changer", img, "Wallpaper Changer", menu=(
@@ -402,5 +404,9 @@ if __name__ == "__main__":
   # Relaunch in admin mode if required
   if elevator: 
     print("Relaunching in admin mode...")
-    pyuac.runAsAdmin()
+    # Relaunching logic for .exe file and .py file
+    if getattr(sys, 'frozen', False): # executable
+      pyuac.runAsAdmin()
+    else: # script
+      ctypes.windll.shell32.ShellExecuteW(None, "runas", "pythonw", __file__, None, 1)
     os._exit(0)
