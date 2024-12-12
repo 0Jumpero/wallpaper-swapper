@@ -346,10 +346,24 @@ def tray_setup():
       pystray.MenuItem("1 hour", lambda: set_interval(60), checked=lambda item: interval == 60),
       pystray.MenuItem("2 hours", lambda: set_interval(120), checked=lambda item: interval == 120),
     )),
+    pystray.MenuItem("About", lambda: about()),
     pystray.MenuItem("Quit", lambda: tray.stop()),
   ))
   print("Starting tray icon...")
   tray.run()
+
+# About window
+def about():
+  root = tk.Tk()
+  root.title("About")
+  root.geometry("300x135")
+  root.resizable(False, False)
+  root.attributes('-toolwindow', True, '-topmost', True)
+  tk.Label(root, text = f"Wallpaper Changer v1.0\nBy: 0Jumpero").place(relx=0.5, rely=0.3, anchor="center")
+  tk.Button(root, text = "Github", width=10, command = lambda: os.startfile('https://www.github.com/0Jumpero/wallpaper-swapper')).place(relx=0.3, rely=0.75, anchor="center")
+  tk.Button(root, text = "Exit", width=10, command = root.destroy).place(relx=0.7, rely=0.75, anchor="center")
+  root.eval('tk::PlaceWindow . center')
+  root.mainloop()
 
 # Schedule thread
 def run_schedule():
